@@ -2,7 +2,6 @@ import math
 import warnings
 from IPython.display import display, Markdown
 import matplotlib.pyplot as plt
-
 # décorateurs utilitaires pour supprimer les avertissements de la sortie et imprimer un cadre de données dans un tableau Markdown.
 def ignore_warnings(f):
     def _f(*args, **kwargs):

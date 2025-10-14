@@ -40,6 +40,9 @@ def browsers_per_player(df:pd.DataFrame):
     df_browser = pd.DataFrame.from_dict(total_users,orient="index")
     return df_browser
 
+def get_normalize_browser_per_player(df:pd.DataFrame)->pd.Series:
+    return get_Y_stats(df,1)
+
 ### Get mean time
 def get_mean_time(df:pd.DataFrame)->pd.DataFrame:
     """Return mean time and total time for each session """
@@ -58,52 +61,64 @@ def get_mean_time(df:pd.DataFrame)->pd.DataFrame:
         
     return df_time
 
-### Get somedata frequency
-def clean_text(text:str)->float | str:
-    """Return cleaned string or np.nan for None/'none'/empty."""
+### Get Action frequency
+def clean_and_split_text(text: str) -> tuple[str, ...] | float:
+    """Return list of cleaned splits or np.nan for None/'none'/empty."""
     if text is None:
         return np.nan
     s = str(text).strip()
     if s.lower() in {"none", "nan", ""}:
         return np.nan
-    return s.split("(")[0].split("<")[0].split("$")[0].split("1")[0].strip()
+    # Split on multiple delimiters and return all non-empty parts
+    splits = re.split(r"\(|<|\$|1", s)
+    cleaned = [part.strip() for part in splits if part.strip()]
+    cleaned = tuple(cleaned)
+    return cleaned if cleaned else np.nan
 
-def get_data_frequency(df:pd.DataFrame)->pd.DataFrame:
-    actions_list:list = []
-    all_rows = {}
+def parse_actions(df:pd.DataFrame)->tuple[list[list[str]],list[str]]:
+    """Output tuple [ parsed actions , all possible actions ]"""
+    """parsed actions looks like [id,action1,action2...]"""
+    all_rows:list[list[str]] = []
+    actions_list:list[str] = []
     for row in df.itertuples():
-
-        first_action = clean_text(row[3])
-        if pd.notna(first_action):
-            all_rows[row[0]] = [first_action]
-            if first_action not in actions_list:
-                actions_list.append(first_action)
+        id = row[1]
+        buff:list[str] = []
+        first_action = clean_and_split_text(row[3])
+        if pd.notna(first_action) and isinstance(first_action,tuple): # type: ignore
+            # all_rows.append([id]+[first_action[0]])
+            buff.append(first_action[0])
+            if first_action:
+                if first_action[0] not in actions_list:
+                    actions_list.append(str(first_action[0]))
 
         for value in row[4:]:
-            str_value = str(value)
-            if not re.match(r"^t\d{1,5}$",str(str_value)) and re.match(r"^[A-Za-z]",str(str_value)):    
-                    cleaned_text = clean_text(value)
-                    if pd.notna(cleaned_text):
-                        all_rows[row[0]].append(cleaned_text)
-                    if cleaned_text not in actions_list:
-                        actions_list.append(cleaned_text)
+            if pd.notna(value):
+                str_value = str(value)
+                if not re.match(r"^t\d{1,5}$",str(str_value)) and re.match(r"^[A-Za-z]",str(str_value)):    
+                        cleaned_text = clean_and_split_text(value)
+                        if isinstance(cleaned_text,tuple):
+                            buff.append(cleaned_text[0])
+                            if cleaned_text not in actions_list:
+                                actions_list.append(cleaned_text[0])
+        all_rows.append([id]+buff)
 
+    return all_rows,actions_list
+
+def get_actions_frequency(df:pd.DataFrame)->pd.DataFrame:
+    all_rows, actions_list = parse_actions(df=df)
+    print(f"Action list size: {len(actions_list)}")
     logger.info(f"Action list : {actions_list}")
+    col = [0] + actions_list
+    df_action = pd.DataFrame(columns=col)
+    for (index,row) in enumerate(all_rows):
+        serie = pd.Series(row)
+        new_serie = serie.value_counts(normalize=True)
+        df_action[index]=new_serie
 
-    df_action = pd.DataFrame.from_dict(all_rows,orient="index")
+    return df_action
 
-    idxs = list(all_rows.keys())
-    df_frequency = pd.DataFrame(0.0, index=idxs, columns=actions_list)
+# Frequency for consecutive actions
 
-    # Fill proportions per row
-    for rid, acts in all_rows.items():
-        if not acts:
-            continue
-        vc = pd.Series(acts).value_counts(normalize=True)
-        # assign only the columns present in vc
-        df_frequency.loc[rid, vc.index] = vc.values
-
-    return df_frequency
 
 ### Testing functions ###
 if __name__=="__main__":
@@ -111,28 +126,26 @@ if __name__=="__main__":
     ### Importing data
     features_train = read_ds("data/train.csv")
     features_test = read_ds("data/test.csv")
-
+    print("TAIL : ",features_train.tail())
     ### Browser stat
     browser_list = get_browser_list(features_train)
     browsers = browsers_per_player(features_train)
     print("Browser counted :",browsers.head(),"\n")
     # We can see each people use only one browser
+    print("Browser distribution : \n",get_normalize_browser_per_player(features_train).head(10),"\n")
 
     ### Y distribution
-    print("Browser distrbution : \n",get_Y_stats(features_train,1).head(),"\n")
+    print("Browser distrbution : \n",get_Y_stats(features_train,1),"\n")
     # print("Action : \n",get_Y_stats(features_train,3).head())
 
     ### To see if there is outliers
     outlier = get_outlier(features_train)
-    print("Outlier ranking : \n",outlier.head(10),"\n") # We can see there is no real outlier
+    # print("Outlier ranking : \n",outlier.head(10),"\n") # We can see there is no real outlier
 
     ### Mean time by action
-    # print("Mean time : \n",get_mean_time(features_train).head(10),"\n")
+    print("Mean time : \n",get_mean_time(features_train).head(10),"\n")
 
     ### Action frequency
-    df_frequency = get_data_frequency(features_train)
-    print("Frequency : ",df_frequency.head(10))
+    # df_frequency = get_actions_frequency(features_train)
+    # print("Frequency : ",df_frequency.head(10))
     # print("Action frequency : \n",get_data_frequency(features_train).head(10),"\n")
-
-
-
