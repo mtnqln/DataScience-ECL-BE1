@@ -6,6 +6,12 @@ readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
     "ipython>=9.6.0",
+<<<<<<< HEAD
     "jupyter>=1.1.1",
+=======
+    "kaggle>=1.7.4.5",
+    "matplotlib>=3.10.6",
+    "numpy>=2.3.3",
+>>>>>>> be615bfe33c8ab338fee795c1fee88cdc8efeb0c
     "pandas>=2.3.3",
 ]

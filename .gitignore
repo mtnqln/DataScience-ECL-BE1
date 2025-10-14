@@ -8,5 +8,14 @@ wheels/
 
 # Virtual environments
 .venv
+<<<<<<< HEAD
 #data
 data/
+=======
+
+#data
+data
+
+#log
+*.log
+>>>>>>> be615bfe33c8ab338fee795c1fee88cdc8efeb0c
