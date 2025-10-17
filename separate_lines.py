@@ -19,5 +19,8 @@ if __name__ == "__main__":
     features_train["util"] = pd.Categorical(features_train["util"])
 
     def two_pattern(df):
-        for index, row in df.iterrows():
-            pass
+        two_pattern = []
+        for _, row in df.iterrows():
+            actions = row.dropna().tolist()  # retire les NaN au cas où
+            for i in range(len(actions) - 1):
+                two_pattern.append((actions[i], actions[i + 1]))
