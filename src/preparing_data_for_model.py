@@ -1,5 +1,10 @@
 import pandas as pd
-from get_stat_from_data import get_actions_frequency,browsers_per_player,get_mean_time,get_normalize_browser_per_player
+from .get_stat_from_data import (
+    browsers_per_player,
+    get_actions_frequency,
+    get_mean_time,
+    get_normalize_browser_per_player,
+)
 from sklearn.preprocessing import normalize
 from sklearn.model_selection import train_test_split
 

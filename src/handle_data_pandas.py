@@ -1,5 +1,4 @@
 import pandas as pd
-from helper import markdown_table
 
 ### Reading data from csv ###
 def read_ds(ds_name:str)->pd.DataFrame:
@@ -22,4 +21,3 @@ if __name__=="__main__":
     features_test = read_ds("data/test.csv")
     print("Train head : \n",features_train.head())
     print("Test : \n ",features_train.loc[:,:20].head())
-

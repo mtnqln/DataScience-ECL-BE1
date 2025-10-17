@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 import re
-from handle_data_pandas import read_ds
+from .handle_data_pandas import read_ds
 
 # Logs
 import logging
@@ -70,15 +70,31 @@ def clean_and_split_text(text: str) -> tuple[str, ...] | float:
     if s.lower() in {"none", "nan", ""}:
         return np.nan
     # Split on multiple delimiters and return all non-empty parts
-    splits = re.split(r"\(|<|\$|1", s)
-    cleaned = [part.strip() for part in splits if part.strip()]
+    # split but keep the delimiter at the start of each following part
+    splits = re.split(r'(?=(?:\(|<|\$|1))', s)
+    parts = [p for p in splits if p.strip()]
+
+    merged = []
+    it = iter(parts)
+    for p in it:
+        if p.startswith('$') and not p.rstrip().endswith('$'):
+            combined = p
+            for q in it:
+                combined += q
+                if q.rstrip().endswith('$'):
+                    break
+            merged.append(combined)
+        else:
+            merged.append(p)
+
+    cleaned = [s.strip() for s in merged if s.strip()]
     cleaned = tuple(cleaned)
     return cleaned if cleaned else np.nan
 
-def parse_actions(df:pd.DataFrame)->tuple[list[list[str]],list[str]]:
+def parse_actions(df:pd.DataFrame)->tuple[list[list],list[str]]:
     """Output tuple [ parsed actions , all possible actions ]"""
     """parsed actions looks like [id,action1,action2...]"""
-    all_rows:list[list[str]] = []
+    all_rows:list[list] = []
     actions_list:list[str] = []
     for row in df.itertuples():
         id = row[1]
@@ -87,9 +103,8 @@ def parse_actions(df:pd.DataFrame)->tuple[list[list[str]],list[str]]:
         if pd.notna(first_action) and isinstance(first_action,tuple): # type: ignore
             # all_rows.append([id]+[first_action[0]])
             buff.append(first_action[0])
-            if first_action:
-                if first_action[0] not in actions_list:
-                    actions_list.append(str(first_action[0]))
+            if first_action[0] not in actions_list:
+                actions_list.append(str(first_action[0]))
 
         for value in row[4:]:
             if pd.notna(value):
@@ -98,9 +113,9 @@ def parse_actions(df:pd.DataFrame)->tuple[list[list[str]],list[str]]:
                         cleaned_text = clean_and_split_text(value)
                         if isinstance(cleaned_text,tuple):
                             buff.append(cleaned_text[0])
-                            if cleaned_text not in actions_list:
+                            if cleaned_text[0] not in actions_list:
                                 actions_list.append(cleaned_text[0])
-        all_rows.append([id]+buff)
+        all_rows.append([id,buff])
 
     return all_rows,actions_list
 
