@@ -1,0 +1,4 @@
+### Setup
+run `uv sync`
+
+

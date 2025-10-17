@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 import re
 from .handle_data_pandas import read_ds
-
+from typing import Dict
 ### Get Y stat ###
 def get_Y_stats(df:pd.DataFrame,Y:int)->pd.Series:
     result = df[Y].value_counts(normalize=True)
@@ -23,12 +23,25 @@ def get_browser_list(df:pd.DataFrame)->list[str]:
             browser_list.append(browser)
     return browser_list
 
-def browsers_per_player(df:pd.DataFrame, normalize:bool=False ):
+def browsers_per_player(df:pd.DataFrame, normalize:bool=False , unique:bool=True)->pd.DataFrame:
     """Output a DF with the number of browser per col, each row is an id"""
     """A row may look like this : 7, 0, 0, 0 if there is 4 possible browsers"""
+    """If unique is set False then it returns id, 7, 0, 0, 0 ( because the id cannot be put as index if it's not unique )"""
     cols = get_browser_list(df)
-    total_users: dict[str,dict[str,int]] = {} # Setting up a data structure with the name and counter-like dict for different browsers
+    total_users: Dict[str,Dict[str,int]] = {} # Setting up a data structure with the name and counter-like dict for different browsers
     data = df.loc[:,:1]
+    if unique==False:
+        rows:list[Dict] = []
+        rows_dict: Dict = {}
+        for id_and_browser in data.loc[:,0:1].itertuples():
+            rows_dict = {c: 0.0 for c in cols}
+            rows_dict[0] = id_and_browser[1]
+            rows_dict[id_and_browser[2]] = 1.0
+            rows.append(rows_dict)
+        df_out = pd.DataFrame(rows)
+        df_out = df_out[[0, *cols]]
+        return df_out
+    
     for id_and_browser in data.loc[:,0:1].itertuples():
         if id_and_browser[1] not in total_users: 
             total_users[id_and_browser[1]] = {col:0 for col in cols}
@@ -47,7 +60,7 @@ def get_normalize_browser_distribution(df:pd.DataFrame)->pd.Series:
 
 ### Get mean time
 def get_mean_time(df:pd.DataFrame)->pd.DataFrame:
-    """Return mean time and total time for each session """
+    """Return id, mean time and total time for each session """
     df_time = df[[0]].copy()
     df_time["mean_time"] = None
     df_time["total_time"] = None
@@ -144,7 +157,6 @@ def get_actions_frequency(df:pd.DataFrame)->pd.DataFrame:
         serie = pd.Series(counts) 
         new_row.append(serie)
     df_actions = pd.DataFrame(new_row)
-    print(df_actions)
     return df_actions
 
 # Frequency for consecutive actions

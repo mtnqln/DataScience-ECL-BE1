@@ -3,46 +3,49 @@ from .get_stat_from_data import (
     browsers_per_player,
     get_actions_frequency,
     get_mean_time,
-    get_normalize_browser_distribution,
 )
-from sklearn.preprocessing import normalize
+from .helper import normalize_df
+from sklearn.preprocessing import normalize,OneHotEncoder
 from sklearn.model_selection import train_test_split
-
-### Prepare Data ### 
 from typing import Any, Tuple
 
+
+### Prepare Data ### 
+
 def prepare_data(df:pd.DataFrame) -> Tuple[Any, ...]:
-    """Take the input data and return a train, validation and test dataset"""
-    normalized_browsers = get_normalize_browser_distribution(df=df)
-    mean_time = get_mean_time(df=df)
-    browsers_p_player = browsers_per_player(df=df,normalize=True)
-    actions_frequency = get_actions_frequency(df=df)
+    """Take the input data and return a train and test dataset"""
+    mean_time = normalize_df(get_mean_time(df=df),not_cols=0)
+    print("Mean time ",mean_time.iloc[0,:],"\n")
+    browsers_p_player = normalize_df(browsers_per_player(df=df,normalize=True,unique=False),not_cols=0)
+    print("Browser p player",browsers_p_player.iloc[0,:],"\n")
+    actions_frequency = normalize_df(get_actions_frequency(df=df),not_cols=0)
+    print("\n Action frequency : ",actions_frequency.iloc[0,:])
 
-    df_training = pd.DataFrame()
-    df_training["target"] = df.loc[:,0]
-    df_training.set_index("target")
-    df_buff = pd.concat([browsers_p_player, mean_time,actions_frequency], axis=1)
-    df_buff = pd.DataFrame(normalize(df_buff),columns=df_buff.columns,index=df_buff.index)
-    df_training.join(df_buff,on="index")
+    df_buff = pd.merge(actions_frequency,browsers_p_player,on=0)
+    df_training = pd.merge(df_buff,mean_time,on=0)
 
-    X = df_training.drop("target")
-    y = df_training["target"]
+    # Getting labels
+    y = df_training[0]
+    print("\n Xtrain : ",df_training.iloc[:,:])
+    X = df_training.drop(0,axis=1)
 
+    #OneHotEncoding
+    encoder = OneHotEncoder(handle_unknown='ignore')
+    y = y.to_numpy().reshape(-1,1)
+    encoded_y = encoder.fit_transform(y)
+    # print("Encoded Y :",encoded_y)
+    # print("Encoder",encoder.categories_)
     X_train,X_test,y_train,y_test = train_test_split(X,y,test_size=0.10)
-    
+    print("Xtrain : ",X_train)
+    print("Xtest : ",X_test)
     return X_train,X_test,y_train,y_test
 
 
 
 
-
 ### Prepare Data for KNN ### 
-def prepare_data_for_knn(df:pd.DataFrame)->pd.DataFrame:
+# def prepare_data_for_knn(df:pd.DataFrame)->pd.DataFrame:
 
-    return
+#     pass
 
 
-
-### Function tests
-if __name__=="__main__":
-    pass
