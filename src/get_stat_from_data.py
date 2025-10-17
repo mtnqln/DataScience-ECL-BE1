@@ -3,10 +3,6 @@ import numpy as np
 import re
 from .handle_data_pandas import read_ds
 
-# Logs
-import logging
-logger = logging.getLogger(__name__)
-
 ### Get Y stat ###
 def get_Y_stats(df:pd.DataFrame,Y:int)->pd.Series:
     result = df[Y].value_counts(normalize=True)
@@ -91,10 +87,10 @@ def clean_and_split_text(text: str) -> tuple[str, ...] | float:
     cleaned = tuple(cleaned)
     return cleaned if cleaned else np.nan
 
-def parse_actions(df:pd.DataFrame)->tuple[list[list],list[str]]:
+def parse_actions(df:pd.DataFrame)->tuple[list[list[str]],list[str]]:
     """Output tuple [ parsed actions , all possible actions ]"""
-    """parsed actions looks like [id,action1,action2...]"""
-    all_rows:list[list] = []
+    """parsed actions looks like [id,[action1,action2...]]"""
+    all_rows:list[list[str]] = []
     actions_list:list[str] = []
     for row in df.itertuples():
         id = row[1]
@@ -115,29 +111,33 @@ def parse_actions(df:pd.DataFrame)->tuple[list[list],list[str]]:
                             buff.append(cleaned_text[0])
                             if cleaned_text[0] not in actions_list:
                                 actions_list.append(cleaned_text[0])
-        all_rows.append([id,buff])
+        all_rows.append([id]+buff)
 
     return all_rows,actions_list
 
 def get_actions_frequency(df:pd.DataFrame)->pd.DataFrame:
+    """return a dataframe with each row as follow : id, number of action1, number of action2,..."""
     all_rows, actions_list = parse_actions(df=df)
-    print(f"Action list size: {len(actions_list)}")
-    logger.info(f"Action list : {actions_list}")
-    col = [0] + actions_list
-    df_action = pd.DataFrame(columns=col)
+    actions_list.sort()
+    new_row = []
     for (index,row) in enumerate(all_rows):
-        serie = pd.Series(row)
-        new_serie = serie.value_counts(normalize=True)
-        df_action[index]=new_serie
-
-    return df_action
+        user_id, *actions = row
+        total = len(actions)
+        counts = {}
+        counts[0] = user_id #type: ignore
+        for a in actions_list:
+            counts[a] = (actions.count(a) / total) if total > 0 else 0
+        serie = pd.Series(counts) 
+        new_row.append(serie)
+    df_actions = pd.DataFrame(new_row)
+    print(df_actions)
+    return df_actions
 
 # Frequency for consecutive actions
 
 
 ### Testing functions ###
 if __name__=="__main__":
-    logging.basicConfig(filename="get_stat_from_data.log",level=logging.INFO)
     ### Importing data
     features_train = read_ds("data/train.csv")
     features_test = read_ds("data/test.csv")
