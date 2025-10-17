@@ -33,9 +33,7 @@ def prepare_data(df:pd.DataFrame) -> Tuple[Any, ...]:
     encoder = OneHotEncoder(handle_unknown='ignore')
     y = y.to_numpy().reshape(-1,1)
     encoded_y = encoder.fit_transform(y)
-    # print("Encoded Y :",encoded_y)
-    # print("Encoder",encoder.categories_)
-    X_train,X_test,y_train,y_test = train_test_split(X,y,test_size=0.10)
+    X_train,X_test,y_train,y_test = train_test_split(X,encoded_y,test_size=0.10)
     print("Xtrain : ",X_train)
     print("Xtest : ",X_test)
     return X_train,X_test,y_train,y_test

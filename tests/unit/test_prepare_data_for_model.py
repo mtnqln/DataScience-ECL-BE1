@@ -8,4 +8,4 @@ def test_prepare_data():
     (X_train,X_test,y_train,y_test) = prepare_data(df)
 
     assert X_train.shape == (2,10)
-    assert y_train.shape == (2,1)
+    assert y_train.shape == (2,3)
