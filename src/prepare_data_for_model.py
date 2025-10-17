@@ -3,7 +3,7 @@ from .get_stat_from_data import (
     browsers_per_player,
     get_actions_frequency,
     get_mean_time,
-    get_normalize_browser_per_player,
+    get_normalize_browser_distribution,
 )
 from sklearn.preprocessing import normalize
 from sklearn.model_selection import train_test_split
@@ -13,9 +13,9 @@ from typing import Any, Tuple
 
 def prepare_data(df:pd.DataFrame) -> Tuple[Any, ...]:
     """Take the input data and return a train, validation and test dataset"""
-    normalized_browsers = get_normalize_browser_per_player(df=df)
+    normalized_browsers = get_normalize_browser_distribution(df=df)
     mean_time = get_mean_time(df=df)
-    browsers_p_player = browsers_per_player(df=df)
+    browsers_p_player = browsers_per_player(df=df,normalize=True)
     actions_frequency = get_actions_frequency(df=df)
 
     df_training = pd.DataFrame()

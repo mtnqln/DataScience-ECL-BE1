@@ -23,20 +23,26 @@ def get_browser_list(df:pd.DataFrame)->list[str]:
             browser_list.append(browser)
     return browser_list
 
-def browsers_per_player(df:pd.DataFrame):
+def browsers_per_player(df:pd.DataFrame, normalize:bool=False ):
+    """Output a DF with the number of browser per col, each row is an id"""
+    """A row may look like this : 7, 0, 0, 0 if there is 4 possible browsers"""
     cols = get_browser_list(df)
     total_users: dict[str,dict[str,int]] = {} # Setting up a data structure with the name and counter-like dict for different browsers
     data = df.loc[:,:1]
-    for tuple in data.loc[:,0:1].itertuples():
-        if tuple[1] not in total_users: 
-            total_users[tuple[1]] = {col:0 for col in cols}
-        else:
-            current_number = total_users[tuple[1]].get(tuple[2], 0)
-            total_users[tuple[1]][tuple[2]] = current_number + 1
+    for id_and_browser in data.loc[:,0:1].itertuples():
+        if id_and_browser[1] not in total_users: 
+            total_users[id_and_browser[1]] = {col:0 for col in cols}
+        current_number = total_users[id_and_browser[1]].get(id_and_browser[2], 0)
+        total_users[id_and_browser[1]][id_and_browser[2]] = current_number + 1
     df_browser = pd.DataFrame.from_dict(total_users,orient="index")
-    return df_browser
+    if normalize==False:
+        return df_browser
+    # Normalize each row by its row-sum (avoid division by zero)
+    row_sums = df_browser.sum(axis=1)
+    row_sums = row_sums.replace(0, 1)
+    return df_browser.div(row_sums, axis=0)
 
-def get_normalize_browser_per_player(df:pd.DataFrame)->pd.Series:
+def get_normalize_browser_distribution(df:pd.DataFrame)->pd.Series:
     return get_Y_stats(df,1)
 
 ### Get mean time
@@ -46,14 +52,21 @@ def get_mean_time(df:pd.DataFrame)->pd.DataFrame:
     df_time["mean_time"] = None
     df_time["total_time"] = None
     for (index,row) in enumerate(df.itertuples()):
-        counter:int = 0
-        total:float = 0.0
-        for value in row:
-            if re.match(r"^t\d{1,5}$",str(value)):
-                total += sum(float(nbr) for nbr in value[1:])
-                counter +=1
-        df_time.loc[index,"mean_time"] = float(total/counter)
-        df_time.loc[index,"total_time"] = total
+        last_element = str(row[-1])
+        if isinstance(last_element, str) and re.match(r"^t\d{1,5}$", last_element.strip()):
+                try:   
+                    total_time = float(last_element.strip()[1:])
+                except ValueError:
+                    continue
+        number_of_action:int = 0
+        total=0
+        for value in row[3:]:
+            if isinstance(value,str) and not re.match(r"^t\d{1,5}$",str(value)):
+                total += 1
+        df_time.loc[index,"mean_time"] = float(total_time/total) if total > 0 else 0
+        df_time.loc[index,"total_time"] = float(total_time)
+        df_time["mean_time"] = df_time["mean_time"].astype(float)
+        df_time["total_time"] = df_time["total_time"].astype(float)
         
     return df_time
 
@@ -117,6 +130,7 @@ def parse_actions(df:pd.DataFrame)->tuple[list[list[str]],list[str]]:
 
 def get_actions_frequency(df:pd.DataFrame)->pd.DataFrame:
     """return a dataframe with each row as follow : id, number of action1, number of action2,..."""
+    """the numbers are normalized on each rows"""
     all_rows, actions_list = parse_actions(df=df)
     actions_list.sort()
     new_row = []
@@ -147,7 +161,7 @@ if __name__=="__main__":
     browsers = browsers_per_player(features_train)
     print("Browser counted :",browsers.head(),"\n")
     # We can see each people use only one browser
-    print("Browser distribution : \n",get_normalize_browser_per_player(features_train).head(10),"\n")
+    print("Browser distribution : \n",get_normalize_browser_distribution(features_train).head(10),"\n")
 
     ### Y distribution
     print("Browser distrbution : \n",get_Y_stats(features_train,1),"\n")
