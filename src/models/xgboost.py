@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
-from scipy.sparse import csr_matrix
 from xgboost import XGBClassifier
+from sklearn.preprocessing import LabelEncoder
 
 
 def xgboost_inference(X_train: np.ndarray, Y_train: np.ndarray, X_predict: np.ndarray) -> np.ndarray:
@@ -12,16 +12,15 @@ def xgboost_inference(X_train: np.ndarray, Y_train: np.ndarray, X_predict: np.nd
     Returns
     -------
     np.ndarray
-        Matrice (m_samples, n_classes) des prédictions, au format one-hot.
+        Tableau 1D des prédictions (m_labels) correspondant aux utilisateurs.
     """
 
-    # --- Étape 1 : convertir Y_train en labels entiers ---
-    if not isinstance(Y_train, np.ndarray):
-        Y_train = Y_train.toarray()
-    y_labels = np.argmax(Y_train, axis=1)
+    # --- Étape 1 : encoder les labels texte en entiers ---
+    le = LabelEncoder()
+    y_encoded = le.fit_transform(Y_train)
 
     # --- Étape 2 : entraîner le modèle ---
-    num_classes = Y_train.shape[1]
+    num_classes = len(le.classes_)
     model = XGBClassifier(
         objective="multi:softmax",
         num_class=num_classes,
@@ -33,13 +32,12 @@ def xgboost_inference(X_train: np.ndarray, Y_train: np.ndarray, X_predict: np.nd
         verbosity=0
     )
 
-    model.fit(X_train, y_labels)
+    model.fit(X_train, y_encoded)
 
-    # --- Étape 3 : prédire les classes ---
-    y_pred_labels = model.predict(X_predict)
+    # --- Étape 3 : prédire les classes encodées ---
+    y_pred_encoded = model.predict(X_predict)
 
-    # --- Étape 4 : reconvertir en one-hot ---
-    y_pred_onehot = np.zeros((len(y_pred_labels), num_classes))
-    y_pred_onehot[np.arange(len(y_pred_labels)), y_pred_labels] = 1
+    # --- Étape 4 : reconvertir les entiers en labels utilisateur d'origine ---
+    y_pred_labels = le.inverse_transform(y_pred_encoded)
 
-    return y_pred_onehot
+    return y_pred_labels

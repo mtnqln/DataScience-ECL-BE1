@@ -60,13 +60,44 @@ def prepare_data_for_xgboost(df:pd.DataFrame) -> Tuple[Any, ...]:
     print("#############################")
     print(y)
     print("#############################")
-    y = y.to_numpy().reshape(-1,1)
+    y = y.to_numpy().reshape(-1,1)[:,0]
     X_train,X_test,y_train,y_test = train_test_split(X,y,test_size=0.10)
     #print("Xtrain : ",X_train)
     #print("Xtest : ",X_test)
     return X_train,X_test,y_train,y_test
 
+def merge_in_batches(actions_frequency, browsers_p_player, mean_time, batch_size=10_000):
+    """
+    Fusionne trois DataFrames par petits lots pour éviter la surcharge mémoire.
+    On suppose que tous ont une colonne commune appelée '0'.
+    """
 
+    all_keys = actions_frequency[0].unique()
+    n = len(all_keys)
+    print(f"[INFO] Nombre total d'IDs à fusionner : {n:,}")
+
+    results = []  # pour stocker les morceaux fusionnés
+
+    for start in range(0, n, batch_size):
+        end = min(start + batch_size, n)
+        keys_batch = all_keys[start:end]
+
+        a_batch = actions_frequency[actions_frequency[0].isin(keys_batch)]
+        b_batch = browsers_p_player[browsers_p_player[0].isin(keys_batch)]
+        m_batch = mean_time[mean_time[0].isin(keys_batch)]
+
+        # 🔸 On fait les merges sur le batch courant
+        df_buff = pd.merge(a_batch, b_batch, on=0, how="inner")
+        df_training_batch = pd.merge(df_buff, m_batch, on=0, how="inner")
+
+        results.append(df_training_batch)
+
+        print(f"[INFO] Batch {start//batch_size + 1} fusionné ({len(df_training_batch):,} lignes)")
+
+    df_training = pd.concat(results, ignore_index=True)
+    print(f"[INFO] Fusion complète terminée : {len(df_training):,} lignes")
+
+    return df_training
 
 
 ### Prepare Data for KNN ### 
