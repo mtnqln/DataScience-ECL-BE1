@@ -50,7 +50,9 @@ def prepare_data_for_xgboost(df:pd.DataFrame) -> Tuple[Any, ...]:
     actions_frequency = normalize_df(get_actions_frequency(df=df),not_cols=0)
     #print("\n Action frequency : ",actions_frequency.iloc[0,:])
 
-    df_training = merge_in_batches(actions_frequency, browsers_p_player, mean_time, batch_size=5000)
+    df_buff = pd.merge(actions_frequency,browsers_p_player,how='left',on=0) 
+    df_training = pd.merge(df_buff,mean_time,how='left',on=0)
+    #df_training = merge_in_batches(actions_frequency, browsers_p_player, mean_time, batch_size=5000)
 
     # Getting labels
     y = df_training[0]

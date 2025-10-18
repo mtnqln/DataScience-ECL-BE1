@@ -13,7 +13,6 @@ def main():
 
 if __name__ == "__main__":
     features_train = read_ds("data/train.csv")
-    breakpoint()
     X_train,X_test,y_train,y_test = prepare_data_for_xgboost(features_train)
     BATCH_SIZE = 5000
     all_preds = []
@@ -26,10 +25,8 @@ if __name__ == "__main__":
         X_batch = X_test[start:end]
         y_batch = y_test[start:end]
 
-        # 🔮 prédiction du batch
         y_pred_batch = xgboost_inference(X_train=X_train, Y_train=y_train, X_predict=X_batch)
         
-        # 🧩 on stocke les résultats
         all_preds.append(y_pred_batch)
         all_true.append(y_batch)
 
