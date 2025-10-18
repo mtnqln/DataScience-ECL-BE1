@@ -5,7 +5,7 @@ from .get_stat_from_data import (
     get_mean_time,
 )
 from .helper import normalize_df
-from sklearn.preprocessing import normalize,OneHotEncoder
+from sklearn.preprocessing import normalize,LabelEncoder , OneHotEncoder
 from sklearn.model_selection import train_test_split
 from typing import Any, Tuple
 
@@ -14,11 +14,16 @@ from typing import Any, Tuple
 
 def prepare_data(df:pd.DataFrame) -> Tuple[Any, ...]:
     """Take the input data and return a train and test dataset"""
-    mean_time = normalize_df(get_mean_time(df=df),not_cols=0)
-    print("Mean time ",mean_time.iloc[0,:],"\n")
-    browsers_p_player = normalize_df(browsers_per_player(df=df,normalize=True,unique=False),not_cols=0)
-    print("Browser p player",browsers_p_player.iloc[0,:],"\n")
+    mean_time = normalize_df(get_mean_time(df=df),not_cols=0).drop(0,axis=1)
+    browsers_p_player = normalize_df(browsers_per_player(df=df,normalize=True,unique=False),not_cols=0).drop(0,axis=1)
     actions_frequency = normalize_df(get_actions_frequency(df=df),not_cols=0)
+    # For labels
+    y = actions_frequency[0]
+    actions_frequency = actions_frequency.drop(0,axis=1)
+    df_buff = pd.merge(actions_frequency,browsers_p_player,left_index=True,right_index=True)
+    df_training = pd.merge(df_buff,mean_time,left_index=True,right_index=True)
+
+
     print("\n Action frequency : ",actions_frequency.iloc[0,:])
 
     df_buff = pd.merge(actions_frequency,browsers_p_player,on=0)
@@ -32,6 +37,11 @@ def prepare_data(df:pd.DataFrame) -> Tuple[Any, ...]:
     print(y)
     print("#############################")
     #OneHotEncoding
+    lb = LabelEncoder()
+    y = y.to_numpy()
+    lb.fit(y)
+    encoded_y = lb.transform(y) # y is encoded as for example [ 0, 2, 1] where each number is a class
+    X_train,X_test,y_train,y_test = train_test_split(df_training,encoded_y,test_size=0.20)
     encoder = OneHotEncoder(handle_unknown='ignore')
     y = y.to_numpy().reshape(-1,1)
     encoded_y = encoder.fit_transform(y)
