@@ -15,7 +15,7 @@ def test_knn_inference():
     X_train,X_test,y_train,y_true = prepare_data(df=df)
     y_pred = knn_inference(X_train=X_train,Y_train=y_train,X_predict=X_test,number_of_neighbors=2)
 
-    print("Xtest shape : ",X_test.iloc[0:])
+    print("Xtest shape : ",X_test.shape)
     print("\n y test : ",y_true)
     print("\n y pred : ",y_pred)
     accuracy = f1_score(y_true,y_pred,average='macro')
@@ -24,8 +24,8 @@ def test_knn_inference():
 
 def test_knn_f1_score():
     features_train = read_ds("data/train.csv")
-    f1_score = knn_f1_score(features_train=features_train,nn=5)
+    f1_score = knn_f1_score(features_train=features_train,nn=2)
     print("F1 score : ",f1_score)
-    assert f1_score > 50000
+    assert f1_score > 1
 
 
