@@ -1,6 +1,8 @@
 import pandas as pd
 import numpy as np
 import re
+
+from src.helper import last_non_na_from_tuple
 from .handle_data_pandas import read_ds
 from typing import Dict
 ### Get Y stat ###
@@ -65,7 +67,8 @@ def get_mean_time(df:pd.DataFrame)->pd.DataFrame:
     df_time["mean_time"] = None
     df_time["total_time"] = None
     for (index,row) in enumerate(df.itertuples()):
-        last_element = str(row[-1])
+        last_element = str(last_non_na_from_tuple(row))
+        total_time = 0
         if isinstance(last_element, str) and re.match(r"^t\d{1,5}$", last_element.strip()):
                 try:   
                     total_time = float(last_element.strip()[1:])
