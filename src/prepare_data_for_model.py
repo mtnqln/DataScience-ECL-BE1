@@ -72,8 +72,27 @@ def prepare_data_for_xgboost(df:pd.DataFrame) -> Tuple[Any, ...]:
     #print("Xtest : ",X_test)
     return X_train,X_test,y_train,y_test
 
+def prepare_data_for_xgboost(df:pd.DataFrame) -> Tuple[Any, ...]:
+    """Take the input data and return a train and test dataset"""
+    """Take the input data and return a train and test dataset"""
+    mean_time = normalize_df(get_mean_time(df=df),not_cols=0).drop(0,axis=1)
+    browsers_p_player = normalize_df(browsers_per_player(df=df,normalize=True,unique=False),not_cols=0).drop(0,axis=1)
+    actions_frequency = normalize_df(get_actions_frequency(df=df),not_cols=0)
+    # For labels
+    y = actions_frequency[0]
+    actions_frequency = actions_frequency.drop(0,axis=1)
+    df_buff = pd.merge(actions_frequency,browsers_p_player,left_index=True,right_index=True)
+    df_training = pd.merge(df_buff,mean_time,left_index=True,right_index=True)
 
-### Prepare Data for KNN ### 
-# def prepare_data_for_knn(df:pd.DataFrame)->pd.DataFrame:
 
-#     pass
+    #print("\n Action frequency : ",actions_frequency.iloc[0,:])
+    print("#############################")
+    print(y)
+    print("#############################")
+    y = y.to_numpy().reshape(-1,1)[:,0]
+    X_train,X_test,y_train,y_test = train_test_split(df_training,y,test_size=0.10)
+    #print("Xtrain : ",X_train)
+    #print("Xtest : ",X_test)
+    return X_train,X_test,y_train,y_test
+
+
