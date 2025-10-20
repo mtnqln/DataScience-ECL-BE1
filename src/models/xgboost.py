@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 from xgboost import XGBClassifier
 from sklearn.preprocessing import LabelEncoder
+from sklearn.model_selection import cross_val_score, StratifiedKFold
 
 
 def xgboost_inference(X_train: np.ndarray, Y_train: np.ndarray, X_predict: np.ndarray) -> np.ndarray:
@@ -41,3 +42,42 @@ def xgboost_inference(X_train: np.ndarray, Y_train: np.ndarray, X_predict: np.nd
     y_pred_labels = le.inverse_transform(y_pred_encoded)
 
     return y_pred_labels
+
+
+
+def xgboost_cross_validation(X: np.ndarray, Y: np.ndarray) -> float:
+    """
+    Effectue une validation croisée sur un modèle XGBoost régressif.
+
+    Parameters
+    ----------
+    X : np.ndarray
+        Les caractéristiques d'entrée.
+    Y : np.ndarray
+        Les étiquettes cibles.
+
+    Returns
+    -------
+    float
+        La moyenne des scores de validation croisée.
+    """
+    le = LabelEncoder()
+    y_encoded = le.fit_transform(Y)
+
+    # --- Étape 2 : entraîner le modèle ---
+    num_classes = len(le.classes_)
+    model = XGBClassifier(
+        objective="multi:softmax",
+        num_class=num_classes,
+        eval_metric="mlogloss",
+        tree_method="hist",
+        n_estimators=200,
+        max_depth=6,
+        learning_rate=0.1,
+        verbosity=0
+    )
+
+    cv_folds = StratifiedKFold(n_splits=4, shuffle=True, random_state=42)
+    f1_score = cross_val_score(model, X, y_encoded, cv=cv_folds, scoring='f1_macro')
+
+    return f1_score.mean()
