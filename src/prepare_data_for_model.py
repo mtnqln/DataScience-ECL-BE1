@@ -46,13 +46,16 @@ def prepare_data_for_xgboost(df:pd.DataFrame) -> Tuple[Any, ...]:
     df_buff = pd.merge(actions_frequency,browsers_p_player,left_index=True,right_index=True)
     df_training = pd.merge(df_buff,mean_time,left_index=True,right_index=True)
 
+    
 
     #print("\n Action frequency : ",actions_frequency.iloc[0,:])
-    print("#############################")
-    print(y)
-    print("#############################")
+    # print("#############################")
+    # print(y)
+    # print("#############################")
     y = y.to_numpy().reshape(-1,1)[:,0]
-    X_train,X_test,y_train,y_test = train_test_split(df_training,y,test_size=0.10)
+    le = LabelEncoder()
+    y_encoded = le.fit_transform(y)
+    X_train,X_test,y_train,y_test = train_test_split(df_training,y_encoded,test_size=0.10)
     #print("Xtrain : ",X_train)
     #print("Xtest : ",X_test)
     return X_train,X_test,y_train,y_test
