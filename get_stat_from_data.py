@@ -2,6 +2,9 @@ import pandas as pd
 import numpy as np
 import re
 from handle_data_pandas import read_ds
+import matplotlib.pyplot as plt
+
+import data_viz
 
 # Logs
 import logging
@@ -105,34 +108,49 @@ def get_data_frequency(df:pd.DataFrame)->pd.DataFrame:
 
     return df_frequency
 
+def filter_action(value: str):
+    for delim in [ "(", "<", "$", "1"]:
+        if delim in value and (low_ind := value.index(delim)):
+            value = value[:low_ind]
+    return value
+
+
+
 ### Testing functions ###
 if __name__=="__main__":
     logging.basicConfig(filename="get_stat_from_data.log",level=logging.INFO)
     ### Importing data
-    features_train = read_ds("data/train.csv")
-    features_test = read_ds("data/test.csv")
+    features_train = read_ds("train")
+    features_test = read_ds("test")
 
-    ### Browser stat
-    browser_list = get_browser_list(features_train)
-    browsers = browsers_per_player(features_train)
-    print("Browser counted :",browsers.head(),"\n")
-    # We can see each people use only one browser
+    features_train[0] = pd.Categorical(features_train[0])
+    
+    user_counts = features_train[0].value_counts()
+    data_viz.create_boxplot(user_counts, "Nombre d'apparition par utilisateur")
 
-    ### Y distribution
-    print("Browser distrbution : \n",get_Y_stats(features_train,1).head(),"\n")
-    # print("Action : \n",get_Y_stats(features_train,3).head())
+    # uniques = features_train.iloc[:,2:].stack().unique()
+    # filtered_uniques = list(set([filter_action(un) for un in uniques if not un.startswith("t")]))
+    # print(len(filtered_uniques), filtered_uniques)
 
-    ### To see if there is outliers
-    outlier = get_outlier(features_train)
-    print("Outlier ranking : \n",outlier.head(10),"\n") # We can see there is no real outlier
+    # ### Browser stat
+    # browser_list = get_browser_list(features_train)
+    # browsers = browsers_per_player(features_train)
+    # print("Browser counted :",browsers.head(),"\n")
+    # # We can see each people use only one browser
 
-    ### Mean time by action
-    # print("Mean time : \n",get_mean_time(features_train).head(10),"\n")
+    # ### Y distribution
+    # print("Browser distrbution : \n",get_Y_stats(features_train,1).head(),"\n")
+    # # print("Action : \n",get_Y_stats(features_train,3).head())
 
-    ### Action frequency
-    df_frequency = get_data_frequency(features_train)
-    print("Frequency : ",df_frequency.head(10))
+    # ### To see if there is outliers
+    # outlier = get_outlier(features_train)
+    # print("Outlier ranking : \n",outlier.head(10),"\n") # We can see there is no real outlier
+
+    # ### Mean time by action
+    # # print("Mean time : \n",get_mean_time(features_train).head(10),"\n")
+
+    # ### Action frequency
+    # df_frequency = get_data_frequency(features_train)
+    # print("Frequency : ",df_frequency.head(10))
     # print("Action frequency : \n",get_data_frequency(features_train).head(10),"\n")
-
-
 
