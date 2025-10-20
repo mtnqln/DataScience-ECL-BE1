@@ -77,7 +77,6 @@ def prepare_data_for_xgboost(df:pd.DataFrame) -> Tuple[Any, ...]:
 
 def prepare_data_for_cross_val(df:pd.DataFrame) -> Tuple[Any, ...]:
     """Take the input data and return a train and test dataset"""
-    """Take the input data and return a train and test dataset"""
     mean_time = normalize_df(get_mean_time(df=df),not_cols=0).drop(0,axis=1)
     browsers_p_player = normalize_df(browsers_per_player(df=df,normalize=True,unique=False),not_cols=0).drop(0,axis=1)
     actions_frequency = normalize_df(get_actions_frequency(df=df),not_cols=0)
@@ -92,7 +91,6 @@ def prepare_data_for_cross_val(df:pd.DataFrame) -> Tuple[Any, ...]:
 
 
 def prepare_data_for_prediction(df:pd.DataFrame) -> Tuple[Any, ...]:
-    """Take the input data and return a train and test dataset"""
     """Take the input data and return a train and test dataset"""
     mean_time = normalize_df(get_mean_time(df=df),not_cols=0).drop(0,axis=1)
     browsers_p_player = normalize_df(browsers_per_player(df=df,normalize=True,unique=False),not_cols=0).drop(0,axis=1)

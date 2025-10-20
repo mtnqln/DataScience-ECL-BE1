@@ -5,6 +5,9 @@ from sklearn.metrics import f1_score
 from src.prepare_data_for_model import prepare_data
 from sklearn.model_selection import cross_val_score, StratifiedKFold
 
+from src.handle_data_pandas import read_ds
+from src.prepare_data_for_model import prepare_data_for_cross_val, prepare_data_for_prediction, align_features
+
 
 def knn_inference(X_train:np.ndarray,Y_train:np.ndarray,X_predict:np.ndarray,number_of_neighbors:int)->np.ndarray:
     """Takes the input datasets and return the prediction vector"""
@@ -52,3 +55,19 @@ def knn_cross_validation(X: np.ndarray, Y: np.ndarray, number_of_neighbors:int) 
     f1_score = cross_val_score(model, X, Y, cv=cv_folds, scoring='f1_macro')
 
     return f1_score.mean()
+
+
+def knn_submission(number_of_neighbors:int)->np.ndarray:
+    features_train = read_ds("data/train.csv")
+    test = read_ds("data/test.csv")
+    submission = pd.read_csv("data/sample_submission.csv")
+
+    X_train, Y_train = prepare_data_for_cross_val(features_train)
+    X_predict = prepare_data_for_prediction(test)
+    X_predict = align_features(X_train, X_predict)
+
+    y_pred = knn_inference(X_train=X_train, Y_train=Y_train, X_predict=X_predict, number_of_neighbors=1)
+    submission['prediction'] = y_pred
+    submission.to_csv("data/xgboost_submission.csv", index=False)
+
+    return submission
