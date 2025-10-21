@@ -5,7 +5,11 @@ from sklearn.preprocessing import LabelEncoder
 from sklearn.model_selection import cross_val_score, StratifiedKFold
 
 
-def xgboost_inference(X_train: np.ndarray, Y_train: np.ndarray, X_predict: np.ndarray) -> np.ndarray:
+def xgboost_inference(X_train: np.ndarray, 
+                      Y_train: np.ndarray, 
+                      X_predict: np.ndarray,
+                      n_estimators=200,
+                      max_depth=6,) -> np.ndarray:
     """
     Entraîne un modèle XGBoost multiclasses à partir d'un dataset de sessions utilisateurs,
     puis prédit les utilisateurs correspondants pour X_predict.
@@ -27,8 +31,8 @@ def xgboost_inference(X_train: np.ndarray, Y_train: np.ndarray, X_predict: np.nd
         num_class=num_classes,
         eval_metric="mlogloss",
         tree_method="hist",
-        n_estimators=200,
-        max_depth=6,
+        n_estimators=n_estimators,
+        max_depth=max_depth,
         learning_rate=0.1,
         verbosity=0
     )
@@ -45,7 +49,10 @@ def xgboost_inference(X_train: np.ndarray, Y_train: np.ndarray, X_predict: np.nd
 
 
 
-def xgboost_cross_validation(X: np.ndarray, Y: np.ndarray) -> float:
+def xgboost_cross_validation(X: np.ndarray, 
+                             Y: np.ndarray, 
+                             n_estimators=200, 
+                             max_depth=6) -> float:
     """
     Effectue une validation croisée sur un modèle XGBoost régressif.
 
@@ -71,8 +78,8 @@ def xgboost_cross_validation(X: np.ndarray, Y: np.ndarray) -> float:
         num_class=num_classes,
         eval_metric="mlogloss",
         tree_method="hist",
-        n_estimators=200,
-        max_depth=6,
+        n_estimators=n_estimators,
+        max_depth=max_depth,
         learning_rate=0.1,
         verbosity=0
     )
