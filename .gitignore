@@ -10,6 +10,7 @@ wheels/
 .venv
 #data
 data/
+submission/
 
 #log
 *.log
