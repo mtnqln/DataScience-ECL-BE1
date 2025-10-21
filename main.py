@@ -40,7 +40,7 @@ if __name__ == "__main__":
     submission['prediction'] = y_pred
     submission.to_csv("data/xgboost_submission.csv", index=False)
 
-    # f1_score = xgboost_cross_validation(X_train, Y_train, n_estimators=300, max_depth=6)
+    f1_score = xgboost_cross_validation(X_train, Y_train, n_estimators=300, max_depth=6)
     # print(f"Cross-validation scores: {f1_score}")
 
     # X, Y = prepare_data_for_cross_val(features_train)
