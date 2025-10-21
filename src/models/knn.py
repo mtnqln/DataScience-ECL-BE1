@@ -6,7 +6,7 @@ from src.prepare_data_for_model import prepare_data
 from sklearn.model_selection import cross_val_score, StratifiedKFold
 
 from src.handle_data_pandas import read_ds
-from src.prepare_data_for_model import prepare_data_for_cross_val, prepare_data_for_prediction, align_features
+from src.prepare_data_for_model import prepare_data_for_cross_val, prepare_data_for_prediction, prepare_data
 
 
 def knn_inference(X_train:np.ndarray,Y_train:np.ndarray,X_predict:np.ndarray,number_of_neighbors:int)->np.ndarray:
@@ -64,7 +64,7 @@ def knn_submission(number_of_neighbors:int)->np.ndarray:
 
     X_train, Y_train = prepare_data_for_cross_val(features_train)
     X_predict = prepare_data_for_prediction(test)
-    X_predict = align_features(X_train, X_predict)
+    # X_predict = align_features(X_train, X_predict)
 
     y_pred = knn_inference(X_train=X_train, Y_train=Y_train, X_predict=X_predict, number_of_neighbors=1)
     submission['prediction'] = y_pred
