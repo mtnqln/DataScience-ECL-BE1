@@ -5,7 +5,7 @@ from .get_stat_from_data import (
     get_mean_time,
 )
 from .helper import normalize_df
-from sklearn.preprocessing import normalize,LabelEncoder , OneHotEncoder
+from sklearn.preprocessing import normalize,LabelEncoder
 from sklearn.model_selection import train_test_split
 from typing import Any, Tuple
 

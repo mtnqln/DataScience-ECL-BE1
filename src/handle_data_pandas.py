@@ -17,7 +17,10 @@ def read_ds(ds_name:str,test:int|None=None)->pd.DataFrame:
         df.insert(0,0,"a")
         return df
 
-    col_names = list(range(max_cols))
+    if test:
+        col_names = list(range(1, max_cols+1))
+    else:
+        col_names = list(range(max_cols))
 
     df = pd.read_csv(
         ds_name,
@@ -25,6 +28,8 @@ def read_ds(ds_name:str,test:int|None=None)->pd.DataFrame:
         names=col_names,
         engine="python"
     )
+    if test:
+        df.insert(0, 0, "a")
     return df
 
 ### Showing Data samples ###
