@@ -164,32 +164,115 @@ def get_actions_frequency(df:pd.DataFrame)->pd.DataFrame:
 
 # Frequency for consecutive actions
 
+def parse_parentheses(df:pd.DataFrame)->tuple[list[list[str]],list[str]]:
+    """Output tuple [ parsed actions , all possible actions ]"""
+    """parsed actions looks like [id,[action1,action2...]]"""
+    all_rows:list[list[str]] = []
+    actions_list:list[str] = []
+    for row in df.itertuples():
+        id = row[1]
+        buff:list[str] = []
+        first_action = clean_and_split_text(row[3])
+        if pd.notna(first_action) and isinstance(first_action,tuple): # type: ignore
+            for elem in first_action:
+                match = re.search(r'\(([^)]+)\)', elem)
+                if match:
+                    inside = match.group(1).strip()
+                    buff.append(inside)
+                    if inside not in actions_list:
+                        actions_list.append(inside)
+
+        for value in row[4:]:
+            if pd.notna(value):
+                str_value = str(value)
+                if not re.match(r"^t\d{1,5}$",str(str_value)) and re.match(r"^[A-Za-z]",str(str_value)):    
+                        cleaned_text = clean_and_split_text(value)
+                        if isinstance(cleaned_text,tuple):
+                            for elem in cleaned_text:
+                                match = re.search(r'\(([^)]+)\)', elem)
+                                if match:
+                                    inside = match.group(1).strip()
+                                    buff.append(inside)
+                                    if inside not in actions_list:
+                                        actions_list.append(inside)
+        all_rows.append([id]+buff)
+
+    return all_rows,actions_list
+
+def get_parentheses_frequency(df:pd.DataFrame)->pd.DataFrame:
+    """return a dataframe with each row as follow : id, number of action1, number of action2,..."""
+    """the numbers are normalized on each rows"""
+    all_rows, actions_list = parse_parentheses(df=df)
+    actions_list.sort()
+    new_row = []
+    for (index,row) in enumerate(all_rows):
+        user_id, *actions = row
+        total = len(actions)
+        counts = {}
+        counts[0] = user_id #type: ignore
+        for a in actions_list:
+            counts[a] = (actions.count(a) / total) if total > 0 else 0
+        serie = pd.Series(counts) 
+        new_row.append(serie)
+    df_actions = pd.DataFrame(new_row)
+    return df_actions
 
 ### Testing functions ###
 if __name__=="__main__":
     ### Importing data
     features_train = read_ds("data/train.csv")
-    features_test = read_ds("data/test.csv")
-    print("TAIL : ",features_train.tail())
+    features_test = read_ds("data/test.csv", test=True)
+    print("TAIL : ",features_train.head(2))
+
+    ### Feature extraction parentheses
+    parse = parse_parentheses(features_train.head(2))
+    print("Parsed parentheses : ",parse)
+    freq = get_parentheses_frequency(features_train.head(2))
+    print("Frequency parentheses : ",freq)
+
     ### Browser stat
-    browser_list = get_browser_list(features_train)
-    browsers = browsers_per_player(features_train)
-    print("Browser counted :",browsers.head(),"\n")
-    # We can see each people use only one browser
-    print("Browser distribution : \n",get_normalize_browser_distribution(features_train).head(10),"\n")
+    # browser_list = get_browser_list(features_train)
+    # browsers = browsers_per_player(features_train)
+    # print("Browser counted :",browsers.head(),"\n")
+    # # We can see each people use only one browser
+    # print("Browser distribution : \n",get_normalize_browser_distribution(features_train).head(10),"\n")
 
-    ### Y distribution
-    print("Browser distrbution : \n",get_Y_stats(features_train,1),"\n")
-    # print("Action : \n",get_Y_stats(features_train,3).head())
+    # ### Y distribution
+    # print("Browser distrbution : \n",get_Y_stats(features_train,1),"\n")
+    # # print("Action : \n",get_Y_stats(features_train,3).head())
 
-    ### To see if there is outliers
-    outlier = get_outlier(features_train)
-    # print("Outlier ranking : \n",outlier.head(10),"\n") # We can see there is no real outlier
+    # ### To see if there is outliers
+    # outlier = get_outlier(features_train)
+    # # print("Outlier ranking : \n",outlier.head(10),"\n") # We can see there is no real outlier
 
-    ### Mean time by action
-    print("Mean time : \n",get_mean_time(features_train).head(10),"\n")
+    # ### Mean time by action
+    # print("Mean time : \n",get_mean_time(features_train).head(10),"\n")
 
     ### Action frequency
     # df_frequency = get_actions_frequency(features_train)
     # print("Frequency : ",df_frequency.head(10))
     # print("Action frequency : \n",get_data_frequency(features_train).head(10),"\n")
+
+
+
+
+# Feature: prendre entre les $$
+# def extract_between_dollars(text: str) -> list[str]:
+#     """Extract text between dollar signs."""
+#     pattern = r"\$(.*?)\$"
+#     matches = re.findall(pattern, text)
+#     return [match.strip() for match in matches]
+
+# Feature: prendre entre les <>
+# def extract_between_angle_brackets(text: str) -> list[str]:
+#     """Extract text between angle brackets."""
+#     pattern = r"<(.*?)>"
+#     matches = re.findall(pattern, text)
+#     return [match.strip() for match in matches]
+
+# Feature: prendre entre les ()
+# def extract_between_parentheses(text: str) -> list[str]:
+#     """Extract text between parentheses."""
+#     pattern = r"\((.*?)\)"
+#     matches = re.findall(pattern, text)
+#     return [match.strip() for match in matches]

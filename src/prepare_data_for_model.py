@@ -1,10 +1,11 @@
 import pandas as pd
-from .get_stat_from_data import (
+from get_stat_from_data import (
     browsers_per_player,
     get_actions_frequency,
     get_mean_time,
+    get_parentheses_frequency,
 )
-from .helper import normalize_df
+from helper import normalize_df
 from sklearn.preprocessing import normalize,LabelEncoder
 from sklearn.model_selection import train_test_split
 from typing import Any, Tuple
@@ -19,6 +20,7 @@ def prepare_data_for_prediction(df_train:pd.DataFrame, df_test:pd.DataFrame|None
 
     mean_time = normalize_df(get_mean_time(df=df),not_cols=0).drop(0,axis=1)
     browsers_p_player = normalize_df(browsers_per_player(df=df,normalize=True,unique=False),not_cols=0).drop(0,axis=1)
+    parenthesis_frequency = normalize_df(get_parentheses_frequency(df=df),not_cols=0).drop(0,axis=1)
     actions_frequency = normalize_df(get_actions_frequency(df=df),not_cols=0)
 
     df_buff = pd.merge(actions_frequency,browsers_p_player,left_index=True,right_index=True)
