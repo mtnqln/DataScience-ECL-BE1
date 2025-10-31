@@ -21,14 +21,17 @@ class MultiHeadAttention(nn.Module):
         self.W_o = nn.Linear(d_model, d_model)
         
     def scaled_dot_product_attention(self, Q, K, V, mask=None):
+        """
+            Because multidim tensors
+        """
         attn_scores = torch.matmul(Q, K.transpose(-2, -1)) / math.sqrt(self.d_k) #transpose only the last 2 dim of the tensor
         if mask is not None:
             attn_scores = attn_scores.masked_fill(mask == 0, -1e9)
         attn_probs = torch.softmax(attn_scores, dim=-1)
         output = torch.matmul(attn_probs, V)
         return output
-        
-    def split_heads(self, x):
+
+    def split_heads(self, x:torch.Tensor):
         batch_size, seq_length, d_model = x.size()
         return x.view(batch_size, seq_length, self.num_heads, self.d_k).transpose(1, 2)
         
@@ -70,7 +73,7 @@ class PositionalEncoding(nn.Module):
         self.register_buffer('pe', pe.unsqueeze(0))
         
     def forward(self, x):
-        return x + self.pe[:, :x.size(1)] # type: ignore
+        return x + self.pe[:, :x.size(1)] #type:ignore
     
 class EncoderLayer(nn.Module):
     def __init__(self, d_model, num_heads, d_ff, dropout):
@@ -81,23 +84,30 @@ class EncoderLayer(nn.Module):
         self.norm2 = nn.LayerNorm(d_model)
         self.dropout = nn.Dropout(dropout)
         
-    def forward(self, x, mask):
-        attn_output = self.self_attn(x, x, x, mask)
+    def forward(self, x):
+        attn_output = self.self_attn(x, x, x)
         x = self.norm1(x + self.dropout(attn_output))
         ff_output = self.feed_forward(x)
         x = self.norm2(x + self.dropout(ff_output))
         return x
 
-class Classifier(nn.Module):
-    def __init__(self, src_vocab_size, tgt_vocab_size,dim_classes, d_model, num_heads, num_layers, d_ff, max_seq_length, dropout) -> None:
+class ClassifierEncoder(nn.Module):
+    def __init__(self, src_vocab_size, tgt_vocab_size, d_model, num_heads, num_layers, d_ff, max_seq_length, dropout) -> None:
         super().__init__()
         self.encoder_embedding = nn.Embedding(src_vocab_size,d_model)
         self.positional_encoding = PositionalEncoding(d_model, max_seq_length)
         self.encoder_layers = nn.ModuleList([EncoderLayer(d_model, num_heads, d_ff, dropout) for _ in range(num_layers)])
 
-        self.classifier_head = nn.Linear(d_model,dim_classes)
+        self.fc = nn.Linear(d_model, tgt_vocab_size)
         self.dropout = nn.Dropout(dropout)
 
-    def forward(self,src,tgt):
-        pass
+    def forward(self,src):
+        src_embedded = self.dropout(self.positional_encoding(self.encoder_embedding(src)))
+
+        enc_output = src_embedded
+        for enc_layer in self.encoder_layers:
+            enc_output = enc_layer(enc_output)
+        
+        output = self.fc(enc_output)
+        return output
 
