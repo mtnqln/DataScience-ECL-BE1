@@ -163,7 +163,40 @@ def get_actions_frequency(df:pd.DataFrame)->pd.DataFrame:
     return df_actions
 
 # Frequency for consecutive actions
+def get_consecutive_action_tuples(df):
+    """
+    Retourne un df avec des fréquences des couples d'actions consécutifs, on ne garde que les couples où il y a plus de 50% des valeurs qui sont différentes de zéros
+    """    
+    all_rows, actions_list = parse_actions(df=df)  
 
+    all_tuples = []
+    for _, *actions in all_rows:
+        tuples = list(zip(actions, actions[1:]))
+        all_tuples.extend(tuples)
+
+    tuples_list = sorted(set(all_tuples), key=lambda x: str(x))
+
+    new_rows = []
+    for row in all_rows:
+        user_id, *actions = row
+        tuples = list(zip(actions, actions[1:]))
+        total = len(actions)
+        counts = {t: tuples.count(t)/total  for t in tuples_list}
+        counts[0] = user_id
+
+        new_rows.append(pd.Series(counts))
+    #
+    df_tuples = pd.DataFrame(new_rows)
+    zero_counts = (df_tuples == 0).sum(axis=0)
+    zero_fraction = zero_counts / len(df_tuples)
+    keep_cols = zero_fraction <= 0.5
+    df_tuples = df_tuples.loc[:, keep_cols]
+
+    # Pour suivre la logique des autres fonctions condées par mes camarades
+    # Réorganiser les colonnes pour mettre "0" en premier
+    cols = [0] + [col for col in df_tuples.columns if col != 0]
+    df_tuples = df_tuples[cols]
+    return df_tuples
 
 ### Testing functions ###
 if __name__=="__main__":
