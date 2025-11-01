@@ -23,13 +23,10 @@ def prepare_data_for_prediction(df_train:pd.DataFrame, df_test:pd.DataFrame|None
     actions_frequency = normalize_df(get_actions_frequency(df=df),not_cols=0)
     tuples_consecutives_action = normalize_df(get_consecutive_action_tuples(df=df),not_cols=0).drop(0,axis=1)
 
-    # For labels
-    y = actions_frequency[0]
-    actions_frequency = actions_frequency.drop(0,axis=1)
-    mean_time = normalize_df(get_mean_time(df=df),not_cols=0).drop(0,axis=1)
-    df_buff1 = pd.merge(actions_frequency,browsers_p_player,left_index=True,right_index=True)
-    df_buff2 = pd.merge(df_buff1,mean_time,left_index=True,right_index=True)
-    df_processed = pd.merge(df_buff2,tuples_consecutives_action, left_index=True,right_index=True)
+    df_buff0 = pd.merge(actions_frequency,browsers_p_player,left_index=True,right_index=True)
+    df_buff = pd.merge(df_buff0,tuples_consecutives_action,left_index=True,right_index=True)
+    df_processed = pd.merge(df_buff,mean_time,left_index=True,right_index=True)
+    
     
     Y_train = df_processed[df_processed[0]!="a"][0]
     X_train = df_processed[df_processed[0]!="a"].drop(0,axis=1)
