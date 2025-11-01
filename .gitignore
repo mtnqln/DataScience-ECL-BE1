@@ -13,4 +13,10 @@ wheels/
 data/
 
 #log
+<<<<<<< Updated upstream
 *.log
+=======
+*.log
+
+notebook.ipynb/
+>>>>>>> Stashed changes
