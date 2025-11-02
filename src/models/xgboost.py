@@ -38,7 +38,7 @@ def xgboost_inference(X_train: np.ndarray,
         max_depth=max_depth,
         learning_rate=0.1,
         verbosity=0
-    )
+    ) # type: ignore
 
     model.fit(X_train, y_encoded)
 
@@ -85,7 +85,7 @@ def xgboost_cross_validation(X: np.ndarray,
         max_depth=max_depth,
         learning_rate=0.1,
         verbosity=0
-    )
+    ) # type: ignore
 
     cv_folds = StratifiedKFold(n_splits=4, shuffle=True, random_state=42)
     f1_score = cross_val_score(model, X, y_encoded, cv=cv_folds, scoring='f1_macro')

@@ -193,3 +193,107 @@ if __name__=="__main__":
     # df_frequency = get_actions_frequency(features_train)
     # print("Frequency : ",df_frequency.head(10))
     # print("Action frequency : \n",get_data_frequency(features_train).head(10),"\n")
+
+
+def get_consecutive_action_tuples(df):
+    """
+    Retourne un df avec des fréquences des couples d'actions consécutifs, on ne garde que les couples où il y a plus de 50% des valeurs qui sont différentes de zéros
+    """    
+    all_rows, actions_list = parse_actions(df=df)  
+
+    all_tuples = []
+    for _, *actions in all_rows:
+        tuples = list(zip(actions, actions[1:]))
+        all_tuples.extend(tuples)
+
+    tuples_list = sorted(set(all_tuples), key=lambda x: str(x))
+
+    new_rows = []
+    for row in all_rows:
+        user_id, *actions = row
+        tuples = list(zip(actions, actions[1:]))
+        total = len(actions)
+        counts = {t: tuples.count(t)/total  for t in tuples_list}
+        counts[0] = user_id #type: ignore
+
+        new_rows.append(pd.Series(counts))
+    #
+    df_tuples = pd.DataFrame(new_rows)
+    zero_counts = (df_tuples == 0).sum(axis=0)
+    zero_fraction = zero_counts / len(df_tuples)
+    keep_cols = zero_fraction <= 0.5
+    df_tuples = df_tuples.loc[:, keep_cols]
+
+    # Pour suivre la logique des autres fonctions condées par mes camarades
+    # Réorganiser les colonnes pour mettre "0" en premier
+    cols = [0] + [col for col in df_tuples.columns if col != 0]
+    df_tuples = df_tuples[cols]
+    return df_tuples
+
+
+def parse_features(df:pd.DataFrame, feature:str)->tuple[list[list[str]],list[str]]:
+    """Output tuple [ parsed actions , all possible actions ]"""
+    """parsed actions looks like [id,[action1,action2...]]"""
+    match_dict = {
+        "parentheses": r'\(([^)]+)\)',        # texte entre ()
+        "angle_brackets": r'<([^>]+)>',       # texte entre <>
+        "dollars": r'\$([^$]+)\$',            # texte entre $$...$$
+    }
+    match_seq = match_dict[feature]
+
+    all_rows:list[list[str]] = []
+    parentheses_list:list[str] = []
+    actions = ["Création d'un écran", "Double-clic", "Chainage", "Lancement d'une action générique"]
+    for row in df.itertuples():
+        id = row[1]
+        buff:list[str] = []
+        first_action = clean_and_split_text(row[3])
+        if pd.notna(first_action) and isinstance(first_action,tuple): # type: ignore
+            for elem in first_action:
+                match = re.search(match_seq, elem)
+                if match and first_action[0] in actions:
+                    inside = match.group(1).strip()
+                    buff.append(inside)
+                    if inside not in parentheses_list:
+                        parentheses_list.append(inside)
+
+        for value in row[4:]:
+            if pd.notna(value):
+                str_value = str(value)
+                if not re.match(r"^t\d{1,5}$",str(str_value)) and re.match(r"^[A-Za-z]",str(str_value)):    
+                        cleaned_text = clean_and_split_text(value)
+                        if isinstance(cleaned_text,tuple):
+                            for elem in cleaned_text:
+                                match = re.search(match_seq, elem)
+                                if match and cleaned_text[0] in actions:
+                                    inside = match.group(1).strip()
+                                    buff.append(inside)
+                                    if inside not in parentheses_list:
+                                        parentheses_list.append(inside)
+        all_rows.append([id]+buff)
+
+    return all_rows,parentheses_list
+
+def get_features_frequency(df:pd.DataFrame, feature:str)->pd.DataFrame:
+    """return a dataframe with each row as follow : id, number of action1, number of action2,..."""
+    """the numbers are normalized on each rows"""
+    features_dict = {
+        "parentheses": parse_features(df, 'parentheses'),
+        "angle_brackets": parse_features(df, 'angle_brackets'),
+        "dollars": parse_features(df, 'dollars'),
+    }
+    all_rows, actions_list = features_dict[feature]
+
+    actions_list.sort()
+    new_row = []
+    for (index,row) in enumerate(all_rows):
+        user_id, *actions = row
+        total = len(actions)
+        counts = {}
+        counts[0] = user_id #type: ignore
+        for a in actions_list:
+            counts[a] = (actions.count(a) / total) if total > 0 else 0
+        serie = pd.Series(counts) 
+        new_row.append(serie)
+    df_actions = pd.DataFrame(new_row)
+    return df_actions

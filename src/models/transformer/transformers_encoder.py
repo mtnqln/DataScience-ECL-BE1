@@ -107,7 +107,7 @@ class ClassifierEncoder(nn.Module):
         enc_output = src_embedded
         for enc_layer in self.encoder_layers:
             enc_output = enc_layer(enc_output)
-        
+        enc_output = enc_output.mean(dim=1)
         output = self.fc(enc_output)
         return output
 

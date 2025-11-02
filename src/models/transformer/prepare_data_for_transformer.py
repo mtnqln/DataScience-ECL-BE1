@@ -53,11 +53,13 @@ def prepare_data_for_transformer()->tuple[DataLoader,dict[str,int]]:
     params["max_seq_length"] = max_seq_length
     tgt_vocab_size = target.nunique(dropna=True)
     src_vocab_size = tokenizer.get_vocab_size()
+    print(f"TGT VCB SIZE : {tgt_vocab_size} \n")
+    print(f"SRC VCB SIZE : {src_vocab_size} \n")
     params["tgt_vocab_size"] = tgt_vocab_size
     params["src_vocab_size"] = src_vocab_size
 
     # Overiding max seq len
-    max_seq_length = 15000
+    max_seq_length = 250
     print(f"\n MAX SEQ LEN : {max_seq_length} \n")
     train_dataset = ClassificationDataset(labels=target,data=data,max_len=max_seq_length,tokenizer=tokenizer)
     train_dataloader = DataLoader(dataset=train_dataset,batch_size=64,shuffle=True)
