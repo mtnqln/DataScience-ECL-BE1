@@ -9,10 +9,10 @@ from src.prepare_data_for_model import prepare_data_for_prediction
 
 
 def xgboost_inference(X_train: np.ndarray, 
-                      Y_train: np.ndarray, 
-                      X_predict: np.ndarray,
-                      n_estimators=200,
-                      max_depth=6,) -> np.ndarray:
+                    Y_train: np.ndarray, 
+                    X_predict: np.ndarray,
+                    n_estimators=200,
+                    max_depth=6,) -> np.ndarray:
     """
     Entraîne un modèle XGBoost multiclasses à partir d'un dataset de sessions utilisateurs,
     puis prédit les utilisateurs correspondants pour X_predict.
